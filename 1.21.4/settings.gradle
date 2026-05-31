@@ -1,0 +1,24 @@
+pluginManagement {
+	repositories {
+		maven {
+			name = 'Fabric'
+			url = 'https://maven.fabricmc.net/'
+		}
+		maven {
+			name = 'NeoForged'
+			url = 'https://maven.neoforged.net/releases'
+		}
+		maven {
+			name = 'BlameJared'
+			url = 'https://maven.blamejared.com/'
+		}
+		mavenCentral()
+		gradlePluginPortal()
+	}
+}
+
+rootProject.name = 'JERS'
+
+// JEI does not publish a 1.21.4 Fabric artifact on the official Maven.
+// Keep this target NeoForge-only so Gradle can resolve the available JEI jar.
+include('NeoForge')

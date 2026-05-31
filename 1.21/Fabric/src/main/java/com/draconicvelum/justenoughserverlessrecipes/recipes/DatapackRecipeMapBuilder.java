@@ -1,0 +1,361 @@
+package com.draconicvelum.justenoughserverlessrecipes.recipes;
+
+import com.draconicvelum.justenoughserverlessrecipes.JustEnoughServerlessRecipesLog;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.Holder;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.RecipeManager;
+import net.minecraft.world.item.crafting.SmithingTrimRecipe;
+
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+public class DatapackRecipeMapBuilder {
+    private static final String BUNDLED_RECIPE_PATH = "/data/justenoughserverlessrecipes/recipe_fallback/vanilla_recipes.json";
+    private static RegistryAccess clientRegistryAccess;
+    private static final List<String> TRIM_MATERIAL_ITEMS = List.of(
+            "minecraft:amethyst_shard",
+            "minecraft:copper_ingot",
+            "minecraft:diamond",
+            "minecraft:emerald",
+            "minecraft:gold_ingot",
+            "minecraft:iron_ingot",
+            "minecraft:lapis_lazuli",
+            "minecraft:netherite_ingot",
+            "minecraft:quartz",
+            "minecraft:redstone",
+            "minecraft:resin_brick"
+    );
+    private static final List<String> TRIMMABLE_ARMOR_ITEMS = List.of(
+            "minecraft:leather_boots",
+            "minecraft:copper_boots",
+            "minecraft:chainmail_boots",
+            "minecraft:golden_boots",
+            "minecraft:iron_boots",
+            "minecraft:diamond_boots",
+            "minecraft:netherite_boots",
+            "minecraft:leather_leggings",
+            "minecraft:copper_leggings",
+            "minecraft:chainmail_leggings",
+            "minecraft:golden_leggings",
+            "minecraft:iron_leggings",
+            "minecraft:diamond_leggings",
+            "minecraft:netherite_leggings",
+            "minecraft:leather_chestplate",
+            "minecraft:copper_chestplate",
+            "minecraft:chainmail_chestplate",
+            "minecraft:golden_chestplate",
+            "minecraft:iron_chestplate",
+            "minecraft:diamond_chestplate",
+            "minecraft:netherite_chestplate",
+            "minecraft:leather_helmet",
+            "minecraft:copper_helmet",
+            "minecraft:chainmail_helmet",
+            "minecraft:golden_helmet",
+            "minecraft:iron_helmet",
+            "minecraft:diamond_helmet",
+            "minecraft:netherite_helmet",
+            "minecraft:turtle_helmet"
+    );
+
+    public static List<RecipeHolder<?>> build() {
+        List<RecipeHolder<?>> integratedServerRecipes = getIntegratedServerRecipes();
+        if (integratedServerRecipes != null) {
+            return integratedServerRecipes;
+        }
+
+        List<RecipeHolder<?>> bundledRecipes = getBundledFallbackRecipes();
+        if (bundledRecipes != null) {
+            return bundledRecipes;
+        }
+
+        JustEnoughServerlessRecipesLog.LOGGER.warn("No bundled fallback recipe dataset found");
+        return Collections.emptyList();
+    }
+
+    public static void setClientRegistryAccess(RegistryAccess registryAccess) {
+        clientRegistryAccess = registryAccess;
+    }
+
+    private static List<RecipeHolder<?>> getBundledFallbackRecipes() {
+        try (InputStream stream = DatapackRecipeMapBuilder.class.getResourceAsStream(BUNDLED_RECIPE_PATH)) {
+            if (stream == null) {
+                return null;
+            }
+
+            JsonObject root = JsonParser.parseReader(new InputStreamReader(stream, StandardCharsets.UTF_8)).getAsJsonObject();
+            JsonArray recipesJson = root.getAsJsonArray("recipes");
+            List<RecipeHolder<?>> holders = new ArrayList<>(recipesJson.size());
+            List<String> skipped = new ArrayList<>();
+            RegistryAccess registryAccess = getClientRegistryAccess();
+
+            for (JsonElement recipeElement : recipesJson) {
+                if (!recipeElement.isJsonObject()) {
+                    continue;
+                }
+
+                JsonObject recipeJson = recipeElement.getAsJsonObject();
+                RecipeHolder<?> holder = parseBundledRecipe(recipeJson, registryAccess);
+                if (holder != null) {
+                    holders.add(holder);
+                } else if (recipeJson.has("id")) {
+                    skipped.add(recipeJson.get("id").getAsString());
+                }
+            }
+
+            JustEnoughServerlessRecipesLog.LOGGER.info("Loaded {} bundled fallback recipes", holders.size());
+            if (!skipped.isEmpty()) {
+                JustEnoughServerlessRecipesLog.LOGGER.warn("Skipped {} bundled recipes: {}",
+                        skipped.size(),
+                        skipped.stream().collect(Collectors.joining(", ")));
+            }
+            return holders;
+        } catch (Exception e) {
+            JustEnoughServerlessRecipesLog.LOGGER.error("Failed to load bundled fallback recipe dataset", e);
+            return Collections.emptyList();
+        }
+    }
+
+    private static RecipeHolder<?> parseBundledRecipe(JsonObject json, RegistryAccess registryAccess) {
+        ResourceLocation recipeId = null;
+        try {
+            if (!json.has("id")) {
+                return null;
+            }
+
+            recipeId = ResourceLocation.parse(json.get("id").getAsString());
+            ResourceKey<Recipe<?>> key = ResourceKey.create(Registries.RECIPE, recipeId);
+
+            JsonObject recipeJson = json.deepCopy();
+            recipeJson.remove("id");
+
+            Method fromJson = getRecipeFromJsonMethod();
+            fromJson.setAccessible(true);
+            return (RecipeHolder<?>) fromJson.invoke(null, key, recipeJson, registryAccess);
+        } catch (Exception ignored) {
+            if (recipeId != null && json.has("type") && "minecraft:smithing_trim".equals(json.get("type").getAsString())) {
+                return buildSmithingTrimRecipe(recipeId, json, registryAccess);
+            }
+            return null;
+        }
+    }
+
+    private static Method getRecipeFromJsonMethod() throws NoSuchMethodException {
+        for (Method method : RecipeManager.class.getDeclaredMethods()) {
+            Class<?>[] parameterTypes = method.getParameterTypes();
+            if (Modifier.isStatic(method.getModifiers())
+                    && RecipeHolder.class.isAssignableFrom(method.getReturnType())
+                    && parameterTypes.length == 3
+                    && ResourceKey.class.isAssignableFrom(parameterTypes[0])
+                    && JsonObject.class.isAssignableFrom(parameterTypes[1])
+                    && HolderLookup.Provider.class.isAssignableFrom(parameterTypes[2])) {
+                return method;
+            }
+        }
+        throw new NoSuchMethodException("RecipeManager recipe JSON parser");
+    }
+
+    private static RecipeHolder<?> buildSmithingTrimRecipe(ResourceLocation recipeId, JsonObject json, RegistryAccess registryAccess) {
+        try {
+            Ingredient template = parseIngredient(json.get("template"));
+            Ingredient base = parseIngredient(json.get("base"));
+            Ingredient addition = parseIngredient(json.get("addition"));
+            if (template == null || template.isEmpty() || base == null || base.isEmpty() || addition == null || addition.isEmpty()) {
+                logTrimFailure(recipeId, "ingredient parsing returned empty", null);
+                return null;
+            }
+
+            SmithingTrimRecipe recipe = new SmithingTrimRecipe(
+                    template,
+                    base,
+                    addition
+            );
+            return new RecipeHolder<>(recipeId, recipe);
+        } catch (Exception e) {
+            logTrimFailure(recipeId, "exception while building smithing trim", e);
+            return null;
+        }
+    }
+
+    private static Ingredient parseIngredient(JsonElement ingredientJson) {
+        try {
+            if (ingredientJson == null) {
+                return null;
+            }
+
+            if (ingredientJson.isJsonPrimitive()) {
+                String value = ingredientJson.getAsString();
+                if (value.startsWith("#")) {
+                    ResourceLocation tagId = ResourceLocation.parse(value.substring(1));
+                    Ingredient hardcoded = resolveKnownItemTag(tagId);
+                    if (hardcoded != null) {
+                        return hardcoded;
+                    }
+                    TagKey<Item> tagKey = TagKey.create(Registries.ITEM, tagId);
+                    return Ingredient.of(StreamSupport.stream(
+                            BuiltInRegistries.ITEM.getTagOrEmpty(tagKey).spliterator(),
+                            false
+                    ).map(Holder::value).map(ItemStack::new));
+                }
+
+                Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(value));
+                return item == null ? null : Ingredient.of(item);
+            }
+
+            JsonObject object = ingredientJson.getAsJsonObject();
+            if (object.has("item")) {
+                Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(object.get("item").getAsString()));
+                return item == null ? null : Ingredient.of(item);
+            }
+
+            if (object.has("tag")) {
+                ResourceLocation tagId = ResourceLocation.parse(object.get("tag").getAsString());
+                Ingredient hardcoded = resolveKnownItemTag(tagId);
+                if (hardcoded != null) {
+                    return hardcoded;
+                }
+                TagKey<Item> tagKey = TagKey.create(Registries.ITEM, tagId);
+                return Ingredient.of(StreamSupport.stream(
+                        BuiltInRegistries.ITEM.getTagOrEmpty(tagKey).spliterator(),
+                        false
+                ).map(Holder::value).map(ItemStack::new));
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
+
+    private static Ingredient resolveKnownItemTag(ResourceLocation tagId) {
+        if (tagId.equals(ResourceLocation.parse("minecraft:trim_materials"))) {
+            return ingredientFromItemIds(TRIM_MATERIAL_ITEMS);
+        }
+        if (tagId.equals(ResourceLocation.parse("minecraft:trimmable_armor"))) {
+            return ingredientFromItemIds(TRIMMABLE_ARMOR_ITEMS);
+        }
+        return null;
+    }
+
+    private static Ingredient ingredientFromItemIds(List<String> itemIds) {
+        return Ingredient.of(itemIds.stream()
+                .map(ResourceLocation::parse)
+                .map(BuiltInRegistries.ITEM::get)
+                .filter(item -> item != null)
+                .map(ItemStack::new));
+    }
+
+    private static RegistryAccess getClientRegistryAccess() {
+        if (clientRegistryAccess != null) {
+            return clientRegistryAccess;
+        }
+
+        Object level = getClientLevel();
+        if (level != null) {
+            for (Method method : level.getClass().getMethods()) {
+                if (method.getParameterCount() == 0 && RegistryAccess.class.isAssignableFrom(method.getReturnType())) {
+                    try {
+                        return (RegistryAccess) method.invoke(level);
+                    } catch (ReflectiveOperationException ignored) {
+                    }
+                }
+            }
+        }
+        return RegistryAccess.fromRegistryOfRegistries(BuiltInRegistries.REGISTRY);
+    }
+
+    private static Object getClientLevel() {
+        try {
+            Class<?> minecraftClass = Class.forName("net.minecraft.client.Minecraft");
+            Object minecraft = minecraftClass.getMethod("getInstance").invoke(null);
+            for (java.lang.reflect.Field field : minecraftClass.getFields()) {
+                Object value = field.get(minecraft);
+                if (value != null && hasRegistryAccess(value)) {
+                    return value;
+                }
+            }
+        } catch (ReflectiveOperationException ignored) {
+        }
+        return null;
+    }
+
+    private static boolean hasRegistryAccess(Object value) {
+        for (Method method : value.getClass().getMethods()) {
+            if (method.getParameterCount() == 0 && RegistryAccess.class.isAssignableFrom(method.getReturnType())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static List<RecipeHolder<?>> getIntegratedServerRecipes() {
+        try {
+            Class<?> minecraftClass = Class.forName("net.minecraft.client.Minecraft");
+            Method getInstance = minecraftClass.getMethod("getInstance");
+            Object minecraft = getInstance.invoke(null);
+
+            Method hasSingleplayerServer = minecraftClass.getMethod("hasSingleplayerServer");
+            boolean singleplayer = (boolean) hasSingleplayerServer.invoke(minecraft);
+            if (!singleplayer) {
+                return null;
+            }
+
+            Method getSingleplayerServer = minecraftClass.getMethod("getSingleplayerServer");
+            Object server = getSingleplayerServer.invoke(minecraft);
+            if (server == null) {
+                return null;
+            }
+
+            Method getRecipeManager = server.getClass().getMethod("getRecipeManager");
+            Object recipeManager = getRecipeManager.invoke(server);
+            Method getRecipes = recipeManager.getClass().getMethod("getRecipes");
+            @SuppressWarnings("unchecked")
+            Iterable<RecipeHolder<?>> recipes = (Iterable<RecipeHolder<?>>) getRecipes.invoke(recipeManager);
+
+            List<RecipeHolder<?>> holders = new ArrayList<>();
+            for (RecipeHolder<?> recipe : recipes) {
+                holders.add(recipe);
+            }
+
+            JustEnoughServerlessRecipesLog.LOGGER.info("Using integrated server RecipeManager with {} recipes", holders.size());
+            return holders;
+        } catch (ClassNotFoundException ignored) {
+            return null;
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private static boolean getBoolean(JsonObject json, String key, boolean fallback) {
+        return json.has(key) ? json.get(key).getAsBoolean() : fallback;
+    }
+
+    private static void logTrimFailure(ResourceLocation recipeId, String message, Exception e) {
+        if (e != null) {
+            JustEnoughServerlessRecipesLog.LOGGER.warn("Smithing trim fallback failed for {}: {}", recipeId, message, e);
+        } else {
+            JustEnoughServerlessRecipesLog.LOGGER.warn("Smithing trim fallback failed for {}: {}", recipeId, message);
+        }
+    }
+
+}

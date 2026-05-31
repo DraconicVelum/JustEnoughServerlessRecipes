@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "justenoughserverlessrecipes",
+  "version": "${version}",
+  "name": "Just Enough Serverless Recipes",
+  "description": "Provides vanilla JEI recipes on servers without JEI installed.",
+  "authors": [
+    "Draconic Velum"
+  ],
+  "contact": {
+    "homepage": "https://github.com/DraconicVelum/JustEnoughServerlessRecipes",
+    "sources": "https://github.com/DraconicVelum/JustEnoughServerlessRecipes",
+    "issues": "https://github.com/DraconicVelum/JustEnoughServerlessRecipes/issues"
+  },
+  "license": "The GNU General Public License (GPL-3.0)",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.draconicvelum.justenoughserverlessrecipes.JustEnoughServerlessRecipesMod"
+    ],
+    "jei_mod_plugin": [
+      "com.draconicvelum.justenoughserverlessrecipes.JustEnoughServerlessRecipesPlugin"
+    ]
+  },
+  "mixins": [
+    "justenoughserverlessrecipes.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": "${loader_version_range}",
+    "minecraft": "${minecraft_version_range}",
+    "java": ">=21",
+    "fabric-api": "${fabric_api_version_range}",
+    "jei": "${jei_version_range}"
+  }
+}

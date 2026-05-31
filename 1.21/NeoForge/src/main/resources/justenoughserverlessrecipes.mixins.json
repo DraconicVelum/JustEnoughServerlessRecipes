@@ -1,0 +1,11 @@
+{
+  "required": true,
+  "package": "com.draconicvelum.justenoughserverlessrecipes.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "ItemStackCompatibilityMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
