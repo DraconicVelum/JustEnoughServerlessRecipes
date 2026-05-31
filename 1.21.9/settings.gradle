@@ -1,0 +1,23 @@
+pluginManagement {
+	repositories {
+		maven {
+			name = 'Fabric'
+			url = 'https://maven.fabricmc.net/'
+		}
+		maven {
+			name = 'NeoForged'
+			url = 'https://maven.neoforged.net/releases'
+		}
+		maven {
+			name = 'BlameJared'
+			url = 'https://maven.blamejared.com/'
+		}
+		mavenCentral()
+		gradlePluginPortal()
+	}
+}
+
+rootProject.name = 'JERS'
+
+// JEI is not available for this Minecraft version on Fabric through the public mod platforms.
+include('NeoForge')

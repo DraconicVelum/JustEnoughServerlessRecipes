@@ -1,0 +1,4 @@
+subprojects {
+	group = project.maven_group
+	version = project.mod_version
+}
