@@ -1,4 +1,7 @@
 <h1 align="center"><span style="color:#8000ff;">$\LARGE\color{green}{\textsf{Just Enough Serverless Recipes}}$</span></h1>
+
+<p align="center"><a href="linkout?remoteUrl=https%3a%2f%2fko-fi.com%2fdraconicvelum" rel="nofollow"> <img src="https://shields.io/badge/kofi-Buy_a_coffee-ff5f5f?logo=ko-fi&amp;type=patrons&amp;style=for-the-badge&amp;color=green&amp;logoColor=green" width="250" height="30"></a></p>
+
 <p align="center">
 <a href="https://github.com/DraconicVelum/JustEnoughServerlessRecipes/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/release/DraconicVelum/JustEnoughServerlessRecipes.svg?style=popout"></a>
 <a href="https://github.com/DraconicVelum/JustEnoughServerlessRecipes/releases"><img alt="Total downloads" src="https://img.shields.io/github/downloads/DraconicVelum/JustEnoughServerlessRecipes/total.svg?style=popout"></a>
