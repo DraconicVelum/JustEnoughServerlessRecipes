@@ -1,0 +1,95 @@
+plugins {
+	id 'net.fabricmc.fabric-loom' version "${loom_version}"
+	id 'maven-publish'
+}
+
+def archiveVersionWithMinecraft = "${project.minecraft_release_version}-${project.mod_version}"
+def toGradleRange = { value ->
+	def parts = value.trim().split('\\s+')
+	def lower = parts[0].replace('>=', '')
+	def upper = parts.length > 1 ? parts[1].replace('<=', '') : null
+	upper == null ? "[${lower},)" : "[${lower},${upper}]"
+}
+
+base {
+	archivesName = "${project.archives_base_name}-fabric"
+}
+
+repositories {
+	mavenCentral()
+	maven { url = "https://maven.fabricmc.net/" }
+	maven { url = "https://maven.blamejared.com/" } // JEI
+}
+
+tasks.named("jar") {
+	from(sourceSets.client.output)
+	archiveVersion = archiveVersionWithMinecraft
+}
+
+tasks.matching { it.name in ["remapJar", "sourcesJar", "remapSourcesJar"] }.configureEach {
+	archiveVersion = archiveVersionWithMinecraft
+}
+
+loom {
+	splitEnvironmentSourceSets()
+
+	mods {
+		"justenoughserverlessrecipes" {
+			sourceSet sourceSets.main
+			sourceSet sourceSets.client
+		}
+	}
+
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+
+	// Fabric API
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+	// JEI
+	compileOnly "mezz.jei:jei-${project.jei_minecraft_version}-fabric:${project.jei_version}"
+	runtimeOnly "mezz.jei:jei-${project.jei_minecraft_version}-fabric:${project.jei_version}"
+}
+
+processResources {
+	inputs.property "version", project.version
+	inputs.property "jei_version_range", project.jei_version_range
+	inputs.property "minecraft_version_range", project.minecraft_version_range
+	inputs.property "loader_version_range", project.loader_version_range
+	inputs.property "fabric_api_version_range", project.fabric_api_version_range
+
+	filesMatching("fabric.mod.json") {
+		expand(
+				"version": inputs.properties.version,
+				"jei_version_range": inputs.properties.jei_version_range,
+				"minecraft_version_range": inputs.properties.minecraft_version_range,
+				"loader_version_range": inputs.properties.loader_version_range,
+				"fabric_api_version_range": inputs.properties.fabric_api_version_range
+		)
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 25
+}
+
+java {
+	withSourcesJar()
+
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
+}
+
+jar {
+	inputs.property "archivesName", project.base.archivesName
+
+	def licenseFile = rootProject.file("LICENSE")
+	if (licenseFile.exists()) {
+		from(licenseFile) {
+			rename { "${it}_${inputs.properties.archivesName}"}
+		}
+	}
+}
