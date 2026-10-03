@@ -10,7 +10,7 @@ displayName="Just Enough Serverless Recipes"
 license="The GNU General Public License (GPL-3.0)"
 authors="Draconic Velum"
 description='''
-Provides vanilla JEI recipes on servers without JEI installed.
+Adds JEI recipe transfer support on servers without JEI installed.
 '''
 
 [[dependencies.justenoughserverlessrecipes]]
