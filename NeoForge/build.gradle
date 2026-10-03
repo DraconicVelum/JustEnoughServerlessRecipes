@@ -51,7 +51,7 @@ dependencies {
 processResources {
 	inputs.property "version", project.version
 	inputs.property "jei_version_range", jeiVersionRange
-	inputs.property "loader_version_range", "[11,)"
+	inputs.property "loader_version_range", "[4,)"
 	inputs.property "neoforge_version_range", neoforgeVersionRange
 
 	filesMatching("META-INF/neoforge.mods.toml") {
