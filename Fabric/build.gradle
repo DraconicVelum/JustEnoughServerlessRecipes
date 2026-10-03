@@ -4,13 +4,6 @@ plugins {
 }
 
 def archiveVersionWithMinecraft = "${project.minecraft_release_version}-${project.mod_version}"
-def toGradleRange = { value ->
-	def parts = value.trim().split('\\s+')
-	def lower = parts[0].replace('>=', '')
-	def upper = parts.length > 1 ? parts[1].replace('<=', '') : null
-	upper == null ? "[${lower},)" : "[${lower},${upper}]"
-}
-
 base {
 	archivesName = "${project.archives_base_name}-fabric"
 }
@@ -22,7 +15,6 @@ repositories {
 }
 
 tasks.named("jar") {
-	from(sourceSets.client.output)
 	archiveVersion = archiveVersionWithMinecraft
 }
 
@@ -31,12 +23,9 @@ tasks.matching { it.name in ["remapJar", "sourcesJar", "remapSourcesJar"] }.conf
 }
 
 loom {
-	splitEnvironmentSourceSets()
-
 	mods {
 		"justenoughserverlessrecipes" {
 			sourceSet sourceSets.main
-			sourceSet sourceSets.client
 		}
 	}
 
@@ -52,6 +41,12 @@ dependencies {
 	// JEI
 	compileOnly "mezz.jei:jei-${project.jei_minecraft_version}-fabric:${project.jei_version}"
 	runtimeOnly "mezz.jei:jei-${project.jei_minecraft_version}-fabric:${project.jei_version}"
+	testImplementation 'org.junit.jupiter:junit-jupiter:5.12.2'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
 }
 
 processResources {
