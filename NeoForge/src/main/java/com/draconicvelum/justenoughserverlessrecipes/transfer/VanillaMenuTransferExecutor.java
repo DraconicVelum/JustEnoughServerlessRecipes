@@ -17,6 +17,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -41,6 +42,9 @@ final class VanillaMenuTransferExecutor {
         for (Slot craftingSlot : craftingSlots) {
             if (!craftingSlot.getItem().isEmpty()) {
                 click(container.containerId, craftingSlot.index, 0, ContainerInput.QUICK_MOVE, player);
+                if (!craftingSlot.getItem().isEmpty()) {
+                    return false;
+                }
             }
         }
 
@@ -71,7 +75,7 @@ final class VanillaMenuTransferExecutor {
             if (sourceStack.isEmpty()) {
                 return false;
             }
-            requirements.add(new Requirement(sourceSlot, targetSlot, sourceStack.copyWithCount(1), targetSlot.getMaxStackSize(sourceStack)));
+            requirements.add(new Requirement(sourceSlot, targetSlot, sourceStack.copyWithCount(operation.count()), targetSlot.getMaxStackSize(sourceStack)));
         }
 
         List<PlannedMove> plannedMoves = planMoves(player, inventorySlots, requirements, maxTransfer, requireCompleteSets);
@@ -79,15 +83,123 @@ final class VanillaMenuTransferExecutor {
             return false;
         }
 
+        plannedMoves = combineMoves(plannedMoves);
+        List<PlannedMove> stackMoves = maxTransfer
+                ? planStackMoves(player, inventorySlots, requirements, plannedMoves)
+                : List.of();
+        boolean moveStacks = !stackMoves.isEmpty() && canMoveStacks(container, requirements, stackMoves);
+        if (moveStacks) {
+            plannedMoves = stackMoves;
+        }
         for (PlannedMove plannedMove : plannedMoves) {
             click(container.containerId, plannedMove.sourceSlot(), 0, ContainerInput.PICKUP, player);
-            click(container.containerId, plannedMove.targetSlot(), 1, ContainerInput.PICKUP, player);
+            if (moveStacks) {
+                click(container.containerId, plannedMove.targetSlot(), 0, ContainerInput.PICKUP, player);
+            } else {
+                for (int i = 0; i < plannedMove.count(); i++) {
+                    click(container.containerId, plannedMove.targetSlot(), 1, ContainerInput.PICKUP, player);
+                }
+            }
             if (!container.getCarried().isEmpty()) {
                 click(container.containerId, plannedMove.sourceSlot(), 0, ContainerInput.PICKUP, player);
+            }
+            if (!container.getCarried().isEmpty()) {
+                return false;
             }
         }
 
         return container.getCarried().isEmpty();
+    }
+
+    private static List<PlannedMove> combineMoves(List<PlannedMove> moves) {
+        Map<MoveKey, Integer> counts = new LinkedHashMap<>();
+        for (PlannedMove move : moves) {
+            counts.merge(new MoveKey(move.sourceSlot(), move.targetSlot()), move.count(), Integer::sum);
+        }
+        List<PlannedMove> combined = new ArrayList<>(counts.size());
+        counts.forEach((key, count) -> combined.add(new PlannedMove(key.sourceSlot(), key.targetSlot(), count)));
+        return combined;
+    }
+
+    private static List<PlannedMove> planStackMoves(
+            Player player,
+            List<Slot> inventorySlots,
+            List<Requirement> requirements,
+            List<PlannedMove> moves
+    ) {
+        Map<Integer, Integer> totals = new HashMap<>();
+        for (PlannedMove move : moves) {
+            totals.merge(move.targetSlot(), move.count(), Integer::sum);
+        }
+        Map<Slot, Requirement> targets = new LinkedHashMap<>();
+        for (Requirement requirement : requirements) {
+            if (totals.getOrDefault(requirement.targetSlot().index, 0) != requirement.maxPerSlot()) {
+                return List.of();
+            }
+            Requirement previous = targets.putIfAbsent(requirement.targetSlot(), requirement);
+            if (previous != null && !ItemStack.isSameItemSameComponents(previous.ingredient(), requirement.ingredient())) {
+                return List.of();
+            }
+        }
+
+        Map<Slot, ItemStack> workingStacks = new HashMap<>();
+        for (Slot slot : inventorySlots) {
+            if (!slot.getItem().isEmpty()) {
+                workingStacks.put(slot, slot.getItem().copy());
+            }
+        }
+        List<PlannedMove> stackMoves = new ArrayList<>();
+        for (Requirement requirement : targets.values()) {
+            int remaining = requirement.maxPerSlot();
+            while (remaining > 0) {
+                Slot source = findMatchingSlot(player, inventorySlots, workingStacks, requirement);
+                if (source == null) {
+                    return List.of();
+                }
+                ItemStack stack = workingStacks.get(source);
+                int count = Math.min(remaining, stack.getCount());
+                stackMoves.add(new PlannedMove(source.index, requirement.targetSlot().index, count));
+                stack.shrink(count);
+                remaining -= count;
+            }
+        }
+        return stackMoves;
+    }
+
+    private static boolean canMoveStacks(
+            AbstractContainerMenu container,
+            List<Requirement> requirements,
+            List<PlannedMove> moves
+    ) {
+        Map<Integer, Integer> totals = new HashMap<>();
+        for (PlannedMove move : moves) {
+            totals.merge(move.targetSlot(), move.count(), Integer::sum);
+        }
+        for (Requirement requirement : requirements) {
+            if (totals.getOrDefault(requirement.targetSlot().index, 0) != requirement.maxPerSlot()) {
+                return false;
+            }
+        }
+
+        // Simulate left clicks before sending any: each must place exactly the planned amount.
+        Map<Integer, Integer> remainingSources = new HashMap<>();
+        Map<Integer, Integer> filledTargets = new HashMap<>();
+        for (PlannedMove move : moves) {
+            ItemStack source = container.getSlot(move.sourceSlot()).getItem();
+            Slot target = container.getSlot(move.targetSlot());
+            if (source.isEmpty() || !target.getItem().isEmpty() || !target.mayPlace(source)) {
+                return false;
+            }
+            int available = remainingSources.computeIfAbsent(move.sourceSlot(), key -> source.getCount());
+            int filled = filledTargets.getOrDefault(move.targetSlot(), 0);
+            int capacity = target.getMaxStackSize(source) - filled;
+            if (move.count() != Math.min(available, capacity)) {
+                return false;
+            }
+            remainingSources.put(move.sourceSlot(), available - move.count());
+            filledTargets.put(move.targetSlot(), filled + move.count());
+        }
+        return true;
     }
 
     private static List<PlannedMove> planMoves(
@@ -113,14 +225,13 @@ final class VanillaMenuTransferExecutor {
         while (!activeRequirements.isEmpty()) {
             List<PlannedMove> setMoves = new ArrayList<>(activeRequirements.size());
             Map<Slot, ItemStack> originals = transferAsCompleteSets ? new HashMap<>() : null;
+            Map<Slot, Integer> setCounts = new HashMap<>();
 
-            for (Requirement requirement : activeRequirements) {
-                if (plannedPerTarget.getOrDefault(requirement.targetSlot(), 0) >= requirement.maxPerSlot()) {
-                    continue;
-                }
-
-                Slot sourceSlot = findMatchingSlot(player, inventorySlots, workingStacks, requirement);
-                if (sourceSlot == null) {
+            requirementLoop: for (Requirement requirement : activeRequirements) {
+                int count = requirement.ingredient().getCount();
+                int planned = plannedPerTarget.getOrDefault(requirement.targetSlot(), 0)
+                        + setCounts.getOrDefault(requirement.targetSlot(), 0);
+                if (planned + count > requirement.maxPerSlot()) {
                     if (transferAsCompleteSets) {
                         rollback(workingStacks, originals);
                         setMoves.clear();
@@ -129,16 +240,32 @@ final class VanillaMenuTransferExecutor {
                     continue;
                 }
 
-                if (originals != null && !originals.containsKey(sourceSlot)) {
-                    originals.put(sourceSlot, workingStacks.get(sourceSlot).copy());
-                }
+                int remaining = count;
+                while (remaining > 0) {
+                    Slot sourceSlot = findMatchingSlot(player, inventorySlots, workingStacks, requirement);
+                    if (sourceSlot == null) {
+                        if (transferAsCompleteSets) {
+                            rollback(workingStacks, originals);
+                            setMoves.clear();
+                            break requirementLoop;
+                        }
+                        break;
+                    }
 
-                ItemStack sourceStack = workingStacks.get(sourceSlot);
-                sourceStack.shrink(1);
-                if (sourceStack.isEmpty()) {
-                    workingStacks.remove(sourceSlot);
+                    if (originals != null && !originals.containsKey(sourceSlot)) {
+                        originals.put(sourceSlot, workingStacks.get(sourceSlot).copy());
+                    }
+
+                    ItemStack sourceStack = workingStacks.get(sourceSlot);
+                    int moved = Math.min(remaining, sourceStack.getCount());
+                    sourceStack.shrink(moved);
+                    if (sourceStack.isEmpty()) {
+                        workingStacks.remove(sourceSlot);
+                    }
+                    setMoves.add(new PlannedMove(sourceSlot.index, requirement.targetSlot().index, moved));
+                    setCounts.merge(requirement.targetSlot(), moved, Integer::sum);
+                    remaining -= moved;
                 }
-                setMoves.add(new PlannedMove(sourceSlot.index, requirement.targetSlot().index));
             }
 
             if (setMoves.isEmpty()) {
@@ -149,7 +276,7 @@ final class VanillaMenuTransferExecutor {
             for (PlannedMove setMove : setMoves) {
                 Slot targetSlot = findTarget(requirements, setMove.targetSlot());
                 if (targetSlot != null) {
-                    plannedPerTarget.merge(targetSlot, 1, Integer::sum);
+                    plannedPerTarget.merge(targetSlot, setMove.count(), Integer::sum);
                 }
             }
 
@@ -240,6 +367,9 @@ final class VanillaMenuTransferExecutor {
     private record Requirement(Slot hintSlot, Slot targetSlot, ItemStack ingredient, int maxPerSlot) {
     }
 
-    private record PlannedMove(int sourceSlot, int targetSlot) {
+    private record MoveKey(int sourceSlot, int targetSlot) {
+    }
+
+    private record PlannedMove(int sourceSlot, int targetSlot, int count) {
     }
 }
