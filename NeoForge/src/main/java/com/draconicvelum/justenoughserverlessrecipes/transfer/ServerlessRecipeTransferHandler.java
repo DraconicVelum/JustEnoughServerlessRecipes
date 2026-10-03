@@ -5,6 +5,8 @@ import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
 import mezz.jei.api.helpers.IStackHelper;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.transfer.IRecipeTransferError;
+import mezz.jei.api.recipe.transfer.IRecipeTransferContext;
+import mezz.jei.api.recipe.transfer.RecipeTransferResult;
 import mezz.jei.api.recipe.transfer.IRecipeTransferHandler;
 import mezz.jei.api.recipe.transfer.IRecipeTransferHandlerHelper;
 import mezz.jei.api.recipe.transfer.IRecipeTransferInfo;
@@ -58,6 +60,22 @@ public class ServerlessRecipeTransferHandler<C extends AbstractContainerMenu, R>
 
     @Nullable
     @Override
+    @SuppressWarnings("removal")
+    public IRecipeTransferError transferRecipe(IRecipeTransferContext<R, C> context, boolean doTransfer) {
+        if (Internal.getServerConnection().isJeiOnServer()) {
+            return jeiHandler.transferRecipe(context, doTransfer);
+        }
+        IRecipeTransferError error = transferRecipe(context.getContainer(), context.getRecipe(),
+                context.getRecipeSlots(), context.getPlayer(), context.isMaxTransfer(), doTransfer);
+        if (doTransfer && error == null) {
+            context.completeRecipeTransfer(RecipeTransferResult.SUCCESS);
+        }
+        return error;
+    }
+
+    @Nullable
+    @Override
+    @SuppressWarnings("removal")
     public IRecipeTransferError transferRecipe(C container, R recipe, IRecipeSlotsView recipeSlotsView, Player player, boolean maxTransfer, boolean doTransfer) {
         if (Internal.getServerConnection().isJeiOnServer()) {
             return jeiHandler.transferRecipe(container, recipe, recipeSlotsView, player, maxTransfer, doTransfer);
