@@ -3,7 +3,7 @@
   "id": "justenoughserverlessrecipes",
   "version": "${version}",
   "name": "Just Enough Serverless Recipes",
-  "description": "Provides vanilla JEI recipes on servers without JEI installed.",
+  "description": "Adds JEI recipe transfer support on servers without JEI installed.",
   "authors": [
     "Draconic Velum"
   ],
@@ -15,15 +15,10 @@
   "license": "The GNU General Public License (GPL-3.0)",
   "environment": "client",
   "entrypoints": {
-    "client": [
-      "com.draconicvelum.justenoughserverlessrecipes.JustEnoughServerlessRecipesMod"
-    ],
     "jei_mod_plugin": [
       "com.draconicvelum.justenoughserverlessrecipes.JustEnoughServerlessRecipesPlugin"
     ]
   },
-  "mixins": [
-  ],
   "depends": {
     "fabricloader": "${loader_version_range}",
     "minecraft": "${minecraft_version_range}",
