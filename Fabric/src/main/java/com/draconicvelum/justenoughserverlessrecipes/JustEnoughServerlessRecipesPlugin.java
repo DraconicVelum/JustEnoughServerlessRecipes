@@ -1,14 +1,11 @@
 package com.draconicvelum.justenoughserverlessrecipes;
 
-import com.draconicvelum.justenoughserverlessrecipes.recipes.DatapackRecipeMapBuilder;
 import com.draconicvelum.justenoughserverlessrecipes.transfer.ServerlessPlayerRecipeTransferHandler;
 import com.draconicvelum.justenoughserverlessrecipes.transfer.ServerlessRecipeTransferHandler;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.constants.RecipeTypes;
-import mezz.jei.api.registration.IRecipeRegistration;
 import mezz.jei.api.registration.IRecipeTransferRegistration;
-import mezz.jei.api.runtime.IJeiRuntime;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.AnvilMenu;
 import net.minecraft.world.inventory.BlastFurnaceMenu;
@@ -20,21 +17,12 @@ import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.SmithingMenu;
 import net.minecraft.world.inventory.SmokerMenu;
-import net.minecraft.world.item.crafting.CraftingRecipe;
-import net.minecraft.world.item.crafting.RecipeHolder;
 
 @JeiPlugin
 public class JustEnoughServerlessRecipesPlugin implements IModPlugin {
-    public static IJeiRuntime runtime;
-
     @Override
     public Identifier getPluginUid() {
         return Identifier.fromNamespaceAndPath("justenoughserverlessrecipes", "plugin");
-    }
-
-    @Override
-    public void registerRecipes(IRecipeRegistration registration) {
-        tryInjectDatapackRecipes("registerRecipes()");
     }
 
     @Override
@@ -56,34 +44,6 @@ public class JustEnoughServerlessRecipesPlugin implements IModPlugin {
 
         var playerHandler = new ServerlessPlayerRecipeTransferHandler(transferHelper, stackHelper);
         registration.addRecipeTransferHandler(playerHandler, RecipeTypes.CRAFTING);
-    }
-
-    @Override
-    public void onRuntimeAvailable(IJeiRuntime jeiRuntime) {
-        runtime = jeiRuntime;
-        tryInjectDatapackRecipes("onRuntimeAvailable()");
-    }
-
-    @Override
-    public void onRuntimeUnavailable() {
-        runtime = null;
-    }
-
-    public static boolean tryInjectDatapackRecipes(String source) {
-        var currentMap = mezz.jei.common.Internal.getClientSyncedRecipes();
-        if (!currentMap.values().isEmpty()) {
-            return false;
-        }
-
-        var datapackMap = DatapackRecipeMapBuilder.build();
-        if (datapackMap.values().isEmpty()) {
-            JustEnoughServerlessRecipesLog.LOGGER.warn("Datapack recipe map is empty from {}", source);
-            return false;
-        }
-
-        mezz.jei.common.Internal.setClientSyncedRecipes(datapackMap);
-        JustEnoughServerlessRecipesLog.LOGGER.info("Injected datapack recipe map from {}", source);
-        return true;
     }
 
     private static <C extends net.minecraft.world.inventory.AbstractContainerMenu, R> void registerBasicTransferHandler(
