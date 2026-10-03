@@ -9,23 +9,26 @@
 </p>
 
 <p align="center">
-<b><span style="color:#8000ff;">Just Enough Serverless Recipes</span></b> restores JEI recipe browsing on vanilla or lightly modded servers
+<b><span style="color:#8000ff;">Just Enough Serverless Recipes</span></b> - 26.3 - restores JEI recipe transfer button on vanilla or lightly modded servers
 that do <b>not</b> have JEI installed server-side.
 <br>
-It uses a fallback recipe map on the client so JEI can still display the vanilla recipes and use the recipe transfer button
-</p>
-<p align="center">
-$\LARGE\color{hsl(0,100%,50%)}{\textsf{Spamming crafting recipes to craft multiple packs will send too many packets}}$<br>
-$\LARGE\color{hsl(0,100%,50%)}{\textsf{and may get you kicked from the server. !!!}}$
+<b><span style="color:#8000ff;">Just Enough Serverless Recipes</span></b> - from 1.21 to 26.2 - restores JEI recipes and recipe transfer on vanilla or lightly modded servers
+that do <b>not</b> have JEI installed server-side.
 </p>
 
 ---
 
 ## <span style="color:#8000ff;">$\large\color{green}{\textsf{How It Works}}$</span>
+**Before 26.3:**
+
 - In singleplayer, the mod reads recipes from the integrated server directly.
 - In multiplayer, it uses a bundled vanilla fallback recipe dataset.
 - For recipe transfer, it keeps JEI's button and uses vanilla container clicks.
 - If a server already provides a recipe map, the mod stays out of the way.
+
+**After 26.3:**
+
+- Recipe transfer, it keeps JEI's button and uses vanilla container clicks.
 
 This keeps JEI usable without it being required on the server.
 
@@ -52,5 +55,5 @@ This keeps JEI usable without it being required on the server.
 
 ---
 
-## <span style="color:#8000ff;">$\large\color{green}{\textsf{Licensing}}$</span>
-Licensed under the [GPLv3.0](https://github.com/DraconicVelum/JustEnoughServerlessRecipes/blob/main/LICENSE).
+## <span style="color:#8000ff;">$\large\color{green}{\textsf{License}}$</span>
+Licensed under [GPLv3.0](https://github.com/DraconicVelum/JustEnoughServerlessRecipes/blob/main/LICENSE).
