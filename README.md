@@ -28,7 +28,9 @@ that do <b>not</b> have JEI installed server-side.
 
 **After 26.3:**
 
-- Recipe transfer, it keeps JEI's button and uses vanilla container clicks.
+- Recipe transfer keeps the JEI button and uses vanilla container clicks.
+- From v0.1.1.0, compatible trade recipes can fill the payments of an offer available in the open merchant menu. Click for one trade or Shift-click for the maximum complete trades.
+- Optional fallbacks for JEI Trades, Just Enough Breeding and Just Enough Resources read locally installed data, without requiring a singleplayer cache.
 
 This keeps JEI usable without it being required on the server.
 
@@ -52,6 +54,7 @@ This keeps JEI usable without it being required on the server.
 ## <span style="color:#8000ff;">$\large\color{green}{\textsf{Notes}}$</span>
 - This is a client-side mod, the server does not need to install this mod, the server does not need to install JEI.
 - The player needs JEI installed locally, because this is a JEI addon.
+- Fallback data reflects locally installed resources. Server-only datapacks and changes are unavailable.
 
 ---
 
