@@ -12,6 +12,7 @@ repositories {
 	mavenCentral()
 	maven { url = "https://maven.fabricmc.net/" }
 	maven { url = "https://maven.blamejared.com/" } // JEI
+	maven { url = "https://maven.terraformersmc.com/releases/" } // Mod Menu
 }
 
 tasks.named("jar") {
@@ -41,15 +42,12 @@ dependencies {
 	// JEI
 	compileOnly "mezz.jei:jei-${project.jei_minecraft_version}-fabric:${project.jei_version}"
 	runtimeOnly "mezz.jei:jei-${project.jei_minecraft_version}-fabric:${project.jei_version}"
-	testImplementation 'org.junit.jupiter:junit-jupiter:5.12.2'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-}
-
-tasks.named('test') {
-	useJUnitPlatform()
+	compileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
+	runtimeOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
 }
 
 processResources {
+	filesMatching('jesr-version.properties') { expand(version: project.version) }
 	inputs.property "version", project.version
 	inputs.property "jei_version_range", project.jei_version_range
 	inputs.property "minecraft_version_range", project.minecraft_version_range
