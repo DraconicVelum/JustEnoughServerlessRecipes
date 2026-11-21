@@ -21,6 +21,16 @@ import net.minecraft.world.inventory.SmokerMenu;
 @JeiPlugin
 public class JustEnoughServerlessRecipesPlugin implements IModPlugin {
     @Override
+    public void onRuntimeAvailable(mezz.jei.api.runtime.IJeiRuntime runtime) {
+        com.draconicvelum.justenoughserverlessrecipes.fallback.AddonFallbacks.available(runtime);
+    }
+
+    @Override
+    public void onRuntimeUnavailable() {
+        com.draconicvelum.justenoughserverlessrecipes.fallback.AddonFallbacks.unavailable();
+    }
+
+    @Override
     public Identifier getPluginUid() {
         return Identifier.fromNamespaceAndPath("justenoughserverlessrecipes", "plugin");
     }
@@ -44,6 +54,9 @@ public class JustEnoughServerlessRecipesPlugin implements IModPlugin {
 
         var playerHandler = new ServerlessPlayerRecipeTransferHandler(transferHelper, stackHelper);
         registration.addRecipeTransferHandler(playerHandler, RecipeTypes.CRAFTING);
+        if (JesrConfig.tradeTransferEnabled()) {
+            com.draconicvelum.justenoughserverlessrecipes.transfer.JeiTradesIntegration.register(registration);
+        }
     }
 
     private static <C extends net.minecraft.world.inventory.AbstractContainerMenu, R> void registerBasicTransferHandler(
