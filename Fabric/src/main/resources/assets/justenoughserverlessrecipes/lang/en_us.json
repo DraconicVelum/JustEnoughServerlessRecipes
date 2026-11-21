@@ -1,0 +1,19 @@
+{
+    "jesr.trade_transfer.unavailable":  "This merchant does not offer this trade",
+    "jesr.trade_transfer.clear_cursor":  "Clear the carried item before transferring a trade",
+    "jesr.trade_transfer.out_of_stock":  "This trade is out of stock",
+    "jesr.trade_transfer.changed":  "The merchant inventory changed; check the payment slots and try again",
+    "jesr.trade_transfer.ingredients_or_space":  "Not enough payment items, or inventory space to rearrange payments",
+    "jesr.config.transfer":  "Trade payment transfer",
+    "jesr.config.resources":  "Just Enough Resources fallback",
+    "jesr.config.trades":  "JEI Trades fallback",
+    "jesr.config.save_failed":  "Could not save settings. Check the log and try again.",
+    "jesr.config.breeding.tooltip":  "Load local breeding, taming and related recipes when JEBr has no recipes.",
+    "jesr.config.resources.tooltip":  "Fill empty JER mob drop entries using locally installed loot tables.",
+    "jesr.config.breeding":  "Just Enough Breeding fallback",
+    "jesr.config.defaults":  "Reset",
+    "jesr.config.trades.tooltip":  "Load local villager trades and piglin bartering when JEI Trades has no recipes.",
+    "jesr.config.restart":  "Restart Minecraft to apply changes. Addon fallbacks only run when their addon is installed.",
+    "jesr.config.transfer.tooltip":  "Show the JEI transfer button for matching offers in an open merchant menu. Click for one trade; Shift+click for the maximum.",
+    "jesr.config.title":  "JESR Settings"
+}
