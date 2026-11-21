@@ -49,6 +49,7 @@ dependencies {
 }
 
 processResources {
+	filesMatching('jesr-version.properties') { expand(version: project.version) }
 	inputs.property "version", project.version
 	inputs.property "jei_version_range", jeiVersionRange
 	inputs.property "loader_version_range", "[4,)"
