@@ -3,21 +3,31 @@
   "id": "justenoughserverlessrecipes",
   "version": "${version}",
   "name": "Just Enough Serverless Recipes",
+  "icon": "assets/justenoughserverlessrecipes/icon.png",
   "description": "Adds JEI recipe transfer support on servers without JEI installed.",
   "authors": [
     "Draconic Velum"
   ],
   "contact": {
-    "homepage": "https://github.com/DraconicVelum/JustEnoughServerlessRecipes",
+    "homepage": "https://www.curseforge.com/minecraft/mc-mods/just-enough-serverless-recipes",
     "sources": "https://github.com/DraconicVelum/JustEnoughServerlessRecipes",
     "issues": "https://github.com/DraconicVelum/JustEnoughServerlessRecipes/issues"
   },
-  "license": "The GNU General Public License (GPL-3.0)",
+  "license": "GPL-3.0-only",
   "environment": "client",
   "entrypoints": {
+    "modmenu": [
+      "com.draconicvelum.justenoughserverlessrecipes.JesrModMenuIntegration"
+    ],
+    "client": [
+      "com.draconicvelum.justenoughserverlessrecipes.JustEnoughServerlessRecipesClient"
+    ],
     "jei_mod_plugin": [
       "com.draconicvelum.justenoughserverlessrecipes.JustEnoughServerlessRecipesPlugin"
     ]
+  },
+  "suggests": {
+    "modmenu": "*"
   },
   "depends": {
     "fabricloader": "${loader_version_range}",
