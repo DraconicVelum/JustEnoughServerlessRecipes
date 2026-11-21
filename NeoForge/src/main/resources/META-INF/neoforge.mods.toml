@@ -1,13 +1,16 @@
 modLoader="javafml"
 loaderVersion="${loader_version_range}"
-license="All Rights Reserved"
+license="GPL-3.0-only"
 displayTest="IGNORE_SERVER_VERSION"
+issueTrackerURL="https://github.com/DraconicVelum/JustEnoughServerlessRecipes/issues"
 
 [[mods]]
 modId="justenoughserverlessrecipes"
 version="${version}"
 displayName="Just Enough Serverless Recipes"
-license="The GNU General Public License (GPL-3.0)"
+displayURL="https://www.curseforge.com/minecraft/mc-mods/just-enough-serverless-recipes"
+iconFile="assets/justenoughserverlessrecipes/icon.png"
+iconBlur=false
 authors="Draconic Velum"
 description='''
 Adds JEI recipe transfer support on servers without JEI installed.
