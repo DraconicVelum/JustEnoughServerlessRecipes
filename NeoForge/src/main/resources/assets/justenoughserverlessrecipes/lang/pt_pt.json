@@ -1,0 +1,19 @@
+{
+    "jesr.trade_transfer.unavailable":  "Este comerciante não tem esta troca disponível",
+    "jesr.trade_transfer.clear_cursor":  "Liberta o cursor antes de transferir uma troca",
+    "jesr.trade_transfer.out_of_stock":  "Esta troca está sem stock",
+    "jesr.trade_transfer.changed":  "O inventário do comerciante mudou; verifica os pagamentos e tenta novamente",
+    "jesr.trade_transfer.ingredients_or_space":  "Faltam itens de pagamento ou espaço no inventário para reorganizar os pagamentos",
+    "jesr.config.transfer":  "Transferir pagamentos de trocas",
+    "jesr.config.resources":  "Fallback do Just Enough Resources",
+    "jesr.config.trades":  "Fallback do JEI Trades",
+    "jesr.config.save_failed":  "Não foi possível guardar. Consulta o log e tenta novamente.",
+    "jesr.config.breeding.tooltip":  "Carrega receitas locais de reprodução, domesticação e afins quando faltam no JEBr.",
+    "jesr.config.resources.tooltip":  "Preenche os drops vazios de mobs no JER com as loot tables instaladas no cliente.",
+    "jesr.config.breeding":  "Fallback do Just Enough Breeding",
+    "jesr.config.defaults":  "Repor",
+    "jesr.config.trades.tooltip":  "Carrega trocas e bartering locais quando o JEI Trades não tem receitas.",
+    "jesr.config.restart":  "Reinicia o Minecraft para aplicar as alterações. Cada fallback requer o respetivo addon instalado.",
+    "jesr.config.transfer.tooltip":  "Mostra o botão de transferência do JEI para ofertas do comerciante aberto. Clique para uma troca; Shift+clique para o máximo.",
+    "jesr.config.title":  "Configuração do JESR"
+}
